@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Plotting a Trendline with D3.js</title>
+<style>
+	.lineb {
+		stroke: blue;
+		fill:none;
+		stroke-width: 3;
+	}
+	.lineg {
+		stroke: green;
+		fill:none;
+		stroke-width: 3;
+	}
+	.liner {
+		stroke: red;
+		fill:none;
+		stroke-width: 3;
+	}
+	
+	.axis path,
+	.axis line {
+		fill: none;
+		stroke: black;
+		shape-rendering: crispEdges;
+	}
+	
+	.axis text {
+		font-size: 9px;
+		font-family: sans-serif;
+	}
+	
+	.text-label {
+		font-size: 10px;
+		font-family: sans-serif;
+	}
+	
+</style>
+
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script>
+	var height = 500;
+	var width = 600;
+	var margin = {top: 20, right:20, bottom: 50, left: 80};
+	
+	// formatters for axis and labels
+	var currencyFormat = d3.format("0.2f");
+	var decimalFormat = d3.format("0.2f");
+	
+	var svg = d3.select("body")
+		.append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	
+	svg.append("g")
+		.attr("class", "y axis");
+		
+	svg.append("g")
+		.attr("class", "x axis");
+		
+	var xScale = d3.scale.ordinal()
+		.rangeRoundBands([margin.left, width], .1);
+		
+	var yScale = d3.scale.linear()
+		.range([height, 0]);
+		
+	var zScale = d3.scale.linear()
+		.range([height, 0]);
+	
+	var tScale = d3.scale.linear()
+		.range([height, 0]);
+
+	var xAxis = d3.svg.axis()
+		.scale(xScale)
+		.orient("bottom");
+		
+	var yAxis = d3.svg.axis()
+		.scale(tScale)
+		.orient("left");
+	
+	d3.csv("out.csv", function(data) {
+		
+		// extract the x labels for the axis and scale domain
+		var xLabels = data.map(function (d) { return d['yearmonth']; })
+	
+		xScale.domain(xLabels);
+		yScale.domain([0, Math.round(d3.max(data, function(d) { return parseFloat(d['pos']); }))]);
+		zScale.domain([0, Math.round(d3.max(data, function(d) { return parseFloat(d['neg']); }))]);
+		tScale.domain([0, Math.round(d3.max(data, function(d) { return parseFloat(d['neutral']); }))]);
+		var line1 = d3.svg.line()
+			.x(function(d) { return xScale(d['yearmonth']); })
+			.y(function(d) { return tScale(d['pos']); });
+
+		var line2 = d3.svg.line()
+			.x(function(d) { return xScale(d['yearmonth']); })
+			.y(function(d) { return tScale(d['neg']); });
+		
+		var line3 = d3.svg.line()
+			.x(function(d) { return xScale(d['yearmonth']); })
+			.y(function(d) { return tScale(d['neutral']); });
+		
+
+		svg.append("path")
+			.datum(data)
+			.attr("class","lineb")
+			.attr("d", line1);
+	
+		svg.append("path")
+			.datum(data)
+			.attr("class","lineg")
+			.attr("d", line2);
+		
+		svg.append("path")
+			.datum(data)
+			.attr("class","liner")
+			.attr("d", line3);
+				
+		svg.select(".x.axis")
+			.attr("transform", "translate(0," + (height) + ")")
+			.call(xAxis.tickValues(xLabels.filter(function(d, i) { 
+				if (i % 12 == 0)
+					return d;
+				})))
+			.selectAll("text")
+			.style("text-anchor","end")
+			.attr("transform", function(d) {
+				return "rotate(-45)";
+			});
+		
+		svg.select(".y.axis")
+			.attr("transform", "translate(" + (margin.left) + ",0)")
+			.call(yAxis.tickFormat(currencyFormat));
+			
+		// chart title
+		svg.append("text")
+			.attr("x", (width + (margin.left + margin.right) )/ 2)
+			.attr("y", 0 + margin.top)
+			.attr("text-anchor", "middle")
+			.style("font-size", "16px")
+			.style("font-family", "sans-serif")
+			.text("sentiment analysis");
+		
+		// x axis label
+		svg.append("text")
+			.attr("x", (width + (margin.left + margin.right) )/ 2)
+			.attr("y", height + margin.bottom)
+			.attr("class", "text-label")
+			.attr("text-anchor", "middle")
+			.text("Year-Month");
+		
+		// get the x and y values for least squares
+/*		var xSeries = d3.range(1, xLabels.length + 1);
+		var ySeries = data.map(function(d) { return parseFloat(d['rate']); });
+*/		
+	});
+			
+</script>
+</body>
